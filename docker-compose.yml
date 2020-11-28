@@ -1,0 +1,57 @@
+version: '2'
+
+networks:
+  app-tier:
+    driver: bridge
+
+services:
+  # Zookeeper service running on container port 2181 and external port in 2181 too
+  zookeeper:
+    image: 'docker.io/bitnami/zookeeper:3-debian-10'
+    ports:
+      - '2181:2181'
+    volumes:
+      - 'zookeeper_data:/bitnami'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - app-tier
+  
+  # Broker 1 running kafka on port 9093
+  broker-1:
+    image: 'docker.io/bitnami/kafka:2-debian-10'
+    ports:
+      - '9093:9092'
+    volumes:
+      - 'broker_1_data:/bitnami'
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    networks:
+      - app-tier
+    depends_on:
+      - zookeeper
+
+  # Broker 2 running kafka on port 9094
+  broker-2:
+    image: 'docker.io/bitnami/kafka:2-debian-10'
+    ports:
+      - '9094:9092'
+    volumes:
+      - 'broker_2_data:/bitnami'
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    networks:
+      - app-tier
+    depends_on:
+      - zookeeper
+
+# if a container is shutdown or destroy, all the data will be here
+volumes:
+  zookeeper_data:
+    driver: local
+  broker_1_data:
+    driver: local
+  broker_2_data:
+    driver: local
